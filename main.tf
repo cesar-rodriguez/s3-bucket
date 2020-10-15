@@ -17,6 +17,10 @@ resource "aws_s3_bucket" "bucket" {
     index_document = "index.html"
   }
 
+  versioning {
+    enabled = true
+  }
+
   tags = {
     Name = var.bucket_name
   }
