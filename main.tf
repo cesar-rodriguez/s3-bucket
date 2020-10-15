@@ -1,6 +1,6 @@
 ### S3 Bucket placed behind CloudFront
 variable "bucket_name" {}
-resource "aws_s3_bucket" "b" {
+resource "aws_s3_bucket" "bucket" {
   bucket = var.bucket_name
   acl    = "public"
 
