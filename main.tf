@@ -11,7 +11,7 @@ data "aws_caller_identity" "current" {}
 variable "bucket_name" {}
 resource "aws_s3_bucket" "bucket" {
   bucket = var.bucket_name
-  acl    = "public-read"
+  acl    = "private"
 
   website {
     index_document = "index.html"
@@ -19,6 +19,10 @@ resource "aws_s3_bucket" "bucket" {
 
   tags = {
     Name = var.bucket_name
+  }
+
+  versioning {
+    enabled = true
   }
 }
 output "index_html" {
@@ -28,24 +32,7 @@ output "index_html" {
 resource "aws_s3_bucket_policy" "policy" {
   bucket = aws_s3_bucket.bucket.id
 
-  policy = <<POLICY
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "PublicReadGetObject",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": [
-                "s3:GetObject"
-            ],
-            "Resource": [
-                "arn:aws:s3:::${var.bucket_name}/*"
-            ]
-        }
-    ]
-}
-POLICY
+  policy = "{\"Statement\":[{\"Action\":[\"s3:GetObject\"],\"Effect\":\"Allow\",\"Principal\":\"##principal##\",\"Resource\":[\"arn:aws:s3:::$${var.bucket_name}/*\"],\"Sid\":\"PublicReadGetObject\"}],\"Version\":\"2012-10-17\"}"
 }
 
 resource "aws_s3_bucket_object" "html" {
@@ -64,4 +51,30 @@ resource "aws_s3_bucket_object" "image" {
   acl          = "public-read"
   content_type = "image/png"
   etag         = filemd5("terrascan_logo.png")
+}
+
+resource "aws_s3_bucket_policy" "bucket" {
+  bucket = "${aws_s3_bucket.bucket.id}"
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "bucket-restrict-access-to-users-or-roles",
+      "Effect": "Allow",
+      "Principal": [
+        {
+          "AWS": [
+            "arn:aws:iam::##acount_id##:role/##role_name##",
+            "arn:aws:iam::##acount_id##:user/##user_name##"
+          ]
+        }
+      ],
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::${aws_s3_bucket.bucket.id}/*"
+    }
+  ]
+}
+POLICY
 }
